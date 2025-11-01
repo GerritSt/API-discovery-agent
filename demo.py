@@ -95,9 +95,9 @@ def create_demo_documentation():
             'description': 'Update order status or shipping information.'
         },
         {
-            'method': 'GET',
+            'method': 'POST',
             'path': '/api/v1/auth/login',
-            'full_endpoint': 'GET /api/v1/auth/login',
+            'full_endpoint': 'POST /api/v1/auth/login',
             'description': 'Authenticate user and return access token.'
         },
         {

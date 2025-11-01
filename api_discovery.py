@@ -10,7 +10,6 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 import re
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
