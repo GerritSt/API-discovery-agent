@@ -24,7 +24,7 @@ def main():
     """Main entry point for the AI API Discovery Agent."""
     
     parser = argparse.ArgumentParser(
-        description='AI API Discovery Agent - Use FREE DeepSeek AI to find and document company APIs',
+        description='AI API Discovery Agent - Use FREE DeepSeek AI to find and document company API endpoints',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
@@ -40,7 +40,7 @@ Get a FREE API key at: https://openrouter.ai/keys
     parser.add_argument(
         'company',
         type=str,
-        help='Company name to search for API documentation'
+        help='Company name to search for API endpoints'
     )
     
     parser.add_argument(
@@ -71,7 +71,6 @@ Get a FREE API key at: https://openrouter.ai/keys
     
     try:
         # Initialize AI agent
-        logger.info("Step 1: Using FREE DeepSeek AI to search for API documentation...")
         agent = AIAPIDiscovery()
         
         # Search for API
@@ -79,10 +78,10 @@ Get a FREE API key at: https://openrouter.ai/keys
         
         # Check results
         if not api_info.get('has_api'):
-            logger.error(f"❌ No public API found for '{args.company}'")
+            logger.error(f"No public API found for '{args.company}'")
             if api_info.get('error'):
                 logger.error(f"Error: {api_info['error']}")
-            logger.info("\nThe AI could not find a public API for this company.")
+            logger.info("The AI could not find a public API for this company.")
             logger.info("This could mean:")
             logger.info("  - The company doesn't have a public API")
             logger.info("  - The API information is not publicly available")
@@ -90,41 +89,35 @@ Get a FREE API key at: https://openrouter.ai/keys
             sys.exit(1)
         
         # Display results
-        logger.info(f"✓ Found API information")
-        logger.info(f"  Main Documentation: {api_info['main_documentation_url']}")
-        logger.info(f"  API Type: {api_info['api_type']}")
-        logger.info(f"  Description: {api_info['description']}")
-        
-        if api_info.get('documentation_pages'):
-            logger.info(f"  Documentation Pages: {len(api_info['documentation_pages'])} found")
-        logger.info("")
+        logger.info(f"Base URL: {api_info.get('base_url', 'N/A')}")
+        logger.info(f"API Type: {api_info.get('api_type', 'N/A')}")
+        logger.info(f"Endpoints Found: {len(api_info.get('endpoints', []))}")
         
         # Export to Excel
-        logger.info("Step 2: Creating Excel spreadsheet...")
         exporter = ExcelExporter()
         output_file = exporter.create_spreadsheet(api_info, filename=args.output)
         
-        logger.info(f"✓ Excel file created: {output_file}")
-        logger.info("")
+        logger.info(f"Excel file created: {output_file}")
         
         # Summary
         logger.info("=" * 70)
-        logger.info("✅ Success! API information has been saved to Excel.")
+        logger.info("Success! API endpoints have been saved to Excel.")
         logger.info("=" * 70)
         logger.info(f"Company: {api_info['company_name']}")
-        logger.info(f"API Type: {api_info['api_type']}")
-        logger.info(f"Documentation Pages: {len(api_info.get('documentation_pages', []))}")
+        logger.info(f"API Type: {api_info.get('api_type', 'N/A')}")
+        logger.info(f"Base URL: {api_info.get('base_url', 'N/A')}")
+        logger.info(f"Total Endpoints: {len(api_info.get('endpoints', []))}")
         logger.info(f"Output File: {output_file}")
         logger.info("=" * 70)
         
         return 0
         
     except KeyboardInterrupt:
-        logger.info("\n\n⚠ Operation cancelled by user")
+        logger.info("Operation cancelled by user")
         return 130
         
     except Exception as e:
-        logger.error(f"\n❌ An error occurred: {str(e)}")
+        logger.error(f"An error occurred: {str(e)}")
         if args.verbose:
             logger.exception("Full error details:")
         return 1

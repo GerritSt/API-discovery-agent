@@ -28,7 +28,7 @@ def test_ai_discovery():
     
     # Check for API key
     if not os.getenv('OPENROUTER_API_KEY'):
-        print("⚠ WARNING: OPENROUTER_API_KEY environment variable not set!")
+        print("WARNING: OPENROUTER_API_KEY environment variable not set!")
         print("Please set it before running:")
         print("  Windows: set OPENROUTER_API_KEY=your-key-here")
         print("  Linux/Mac: export OPENROUTER_API_KEY=your-key-here")
@@ -58,23 +58,23 @@ def test_ai_discovery():
             print(f"\nAPI Endpoints ({len(result['endpoints'])}):")
             for i, endpoint in enumerate(result['endpoints'], 1):
                 print(f"  {i}. {endpoint['method']:<7} {endpoint['path']}")
-                print(f"      → {endpoint['description']}")
+                print(f"      {endpoint['description']}")
             
             # Test Excel export
             print("\n" + "=" * 70)
             print("Testing Excel Export...")
             exporter = ExcelExporter()
             output_file = exporter.create_spreadsheet(result)
-            print(f"✓ Excel file created: {output_file}")
+            print(f"Excel file created: {output_file}")
             print("=" * 70)
-            print("\n✅ All tests passed!")
+            print("\nAll tests passed!")
         else:
-            print("❌ No API found")
+            print("No API found")
             if result.get('error'):
                 print(f"Error: {result['error']}")
     
     except Exception as e:
-        print(f"\n❌ Test failed with error: {e}")
+        print(f"\nTest failed with error: {e}")
         import traceback
         traceback.print_exc()
 
