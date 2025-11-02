@@ -41,7 +41,7 @@ class ExcelExporter:
         # Ensure file saves to data directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)
-        data_dir = os.path.join(project_root, 'data')
+        data_dir = os.path.join(project_root, 'outputdata')
         os.makedirs(data_dir, exist_ok=True)
         
         if not os.path.isabs(filename):
