@@ -36,7 +36,7 @@ class AIAPIDiscovery:
         
     def search_company_api(self, company_name: str) -> Dict:
         """
-        Use AI to search for a company's API documentation.
+        Use AI to search for a company's API endpoints using iterative discovery.
         
         Args:
             company_name: Name of the company to search for
@@ -46,30 +46,106 @@ class AIAPIDiscovery:
         """
         logger.info(f"Searching for {company_name} API using AI...")
         
-        prompt = f"""Find the actual API endpoints for {company_name}'s public API. I need:
+        # First pass: Get initial batch of endpoints
+        result = self._fetch_endpoints(company_name)
+        
+        if not result.get('has_api'):
+            return result
+        
+        # If we got endpoints, try to get more in additional passes
+        all_endpoints = result.get('endpoints', [])
+        max_iterations = 5  # Limit iterations to prevent infinite loops
+        iteration = 1
+        
+        while iteration < max_iterations:
+            logger.info(f"Fetching additional endpoints (iteration {iteration + 1})...")
+            additional_result = self._fetch_additional_endpoints(company_name, all_endpoints)
+            
+            new_endpoints = additional_result.get('endpoints', [])
+            if not new_endpoints:
+                logger.info("No more endpoints found")
+                break
+            
+            # Add only unique endpoints
+            existing_paths = {f"{ep['method']}:{ep['path']}" for ep in all_endpoints}
+            unique_new = [ep for ep in new_endpoints 
+                         if f"{ep['method']}:{ep['path']}" not in existing_paths]
+            
+            if not unique_new:
+                logger.info("No new unique endpoints found")
+                break
+            
+            all_endpoints.extend(unique_new)
+            logger.info(f"Added {len(unique_new)} new endpoints. Total: {len(all_endpoints)}")
+            iteration += 1
+        
+        result['endpoints'] = all_endpoints
+        logger.info(f"Successfully found {len(all_endpoints)} API endpoints for {company_name}")
+        return result
+    
+    def _fetch_endpoints(self, company_name: str) -> Dict:
+        """Fetch initial batch of endpoints."""
+        prompt = '''Find the actual API endpoints for ''' + company_name + ''''s public API. I need:
 1. Does the company have a public API? (Yes/No)
 2. A list of the main API endpoints with their HTTP methods, paths, and descriptions
 3. API type (REST, GraphQL, SOAP, etc.)
 4. Base URL for the API
 
 Respond ONLY with valid JSON in this exact format:
-{{
-    "company_name": "{company_name}",
+{
+    "company_name": "''' + company_name + '''",
     "has_api": true,
     "api_type": "REST",
     "base_url": "https://api.example.com/v1",
     "endpoints": [
-        {{"method": "GET", "path": "/users", "description": "Retrieve list of users"}},
-        {{"method": "POST", "path": "/users", "description": "Create a new user"}},
-        {{"method": "GET", "path": "/users/{{id}}", "description": "Get user by ID"}},
-        {{"method": "PUT", "path": "/users/{{id}}", "description": "Update user"}},
-        {{"method": "DELETE", "path": "/users/{{id}}", "description": "Delete user"}}
+        {"method": "GET", "path": "/users", "description": "Retrieve list of users"},
+        {"method": "POST", "path": "/users", "description": "Create a new user"},
+        {"method": "GET", "path": "/users/{id}", "description": "Get user by ID"},
+        {"method": "PUT", "path": "/users/{id}", "description": "Update user"},
+        {"method": "DELETE", "path": "/users/{id}", "description": "Delete user"}
+    ]
+}
+
+Provide 15-20 of the most important/commonly used endpoints.
+If no public API exists, set has_api to false and use empty strings/arrays.'''
+
+        return self._make_api_request(prompt, company_name)
+    
+    def _fetch_additional_endpoints(self, company_name: str, existing_endpoints: List[Dict]) -> Dict:
+        """Fetch additional endpoints not in the existing list."""
+        # Create a summary of existing endpoints (show first 30)
+        existing_summary = "\n".join([f"- {ep['method']} {ep['path']}" for ep in existing_endpoints[:30]])
+        
+        prompt = f'''I already have these {len(existing_endpoints)} endpoints for {company_name}'s API:
+
+{existing_summary}
+{"..." if len(existing_endpoints) > 30 else ""}
+
+Find 15-20 MORE API endpoints that are NOT in the list above. Focus on different resource types and operations.
+
+Respond ONLY with valid JSON in this exact format:
+{{
+    "endpoints": [
+        {{"method": "GET", "path": "/invoices", "description": "List all invoices"}},
+        {{"method": "POST", "path": "/invoices", "description": "Create an invoice"}}
     ]
 }}
 
-Provide at least 10-15 of the most important/commonly used endpoints if available.
-If no public API exists, set has_api to false and use empty strings/arrays."""
+Only include NEW endpoints that are different from the list above. If there are no more endpoints, return an empty endpoints array.'''
 
+        return self._make_api_request(prompt, company_name)
+    
+    def _make_api_request(self, prompt: str, company_name: str) -> Dict:
+        """
+        Make API request to AI model.
+        
+        Args:
+            prompt: The prompt to send to the AI
+            company_name: Name of the company being searched
+            
+        Returns:
+            Dictionary with API information or error
+        """
         try:
             # Make API request to OpenRouter
             response = requests.post(
@@ -85,7 +161,7 @@ If no public API exists, set has_api to false and use empty strings/arrays."""
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are an expert at finding API documentation. Provide accurate, current URLs. Respond only with valid JSON."
+                            "content": "You are an expert at finding API documentation. Provide accurate, current endpoints. Respond only with valid JSON."
                         },
                         {
                             "role": "user",
@@ -108,7 +184,6 @@ If no public API exists, set has_api to false and use empty strings/arrays."""
                 content = content.split("```")[1].split("```")[0].strip()
             
             result = json.loads(content)
-            logger.info(f"Successfully found API info for {company_name}")
             return result
             
         except json.JSONDecodeError as e:
