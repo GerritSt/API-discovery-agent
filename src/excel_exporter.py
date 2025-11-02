@@ -107,9 +107,12 @@ class ExcelExporter:
         sheet[f'C{row}'].font = Font(bold=True)
         sheet[f'C{row}'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
         
-        # Add endpoints
+        # Add endpoints (sorted by path for better organization)
         endpoints = api_info.get('endpoints', [])
-        for endpoint in endpoints:
+        # Sort endpoints by path, then by method
+        sorted_endpoints = sorted(endpoints, key=lambda x: (x.get('path', ''), x.get('method', '')))
+        
+        for endpoint in sorted_endpoints:
             row += 1
             sheet[f'A{row}'] = endpoint.get('method', '')
             sheet[f'B{row}'] = endpoint.get('path', '')
