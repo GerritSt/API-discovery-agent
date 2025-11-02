@@ -1,131 +1,138 @@
-# API Discovery Agent
+# AI API Discovery Agent
 
-An automated workflow agent that discovers, documents, and tabulates a company's API documentation into Excel files.
+Automatically discover and document company APIs using FREE DeepSeek AI.
 
 ## Overview
 
-This Python application automatically:
-1. Searches for a company's API documentation
-2. Extracts available endpoints and their details
-3. Saves the structured information to an Excel spreadsheet
+This tool uses AI to intelligently search for company API documentation and exports the information to Excel spreadsheets. Completely FREE - uses DeepSeek AI via OpenRouter.
 
 ## Features
 
-- **Automatic API Discovery**: Searches common URL patterns to find API documentation
-- **Endpoint Extraction**: Parses documentation pages to extract HTTP methods, paths, and descriptions
-- **Excel Export**: Creates well-formatted, filterable Excel spreadsheets with:
-  - Color-coded headers
-  - Auto-adjusted column widths
-  - Frozen header rows
-  - Alternating row colors for readability
-  - Metadata (documentation URL, timestamp, endpoint count)
+- 🤖 **FREE AI-Powered** - Uses DeepSeek AI (no costs)
+- 📊 **Excel Export** - Clean, formatted spreadsheets
+- 🔍 **Smart Discovery** - Finds documentation URLs, API types, and descriptions
+- 🎯 **Simple** - Only 2 dependencies, clean code
 
 ## Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
+
 ```bash
 git clone https://github.com/GerritSt/API-discovery-agent.git
 cd API-discovery-agent
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
+
 ```bash
-pip install -r requirements.txt
+pip install requests openpyxl
+```
+
+3. **Get FREE API key:**
+
+   - Visit: https://openrouter.ai/keys
+   - Sign up (free account)
+   - Create API key
+   - Copy your key
+
+4. **Set environment variable:**
+
+```bash
+# Windows
+set OPENROUTER_API_KEY=your-api-key-here
+
+# Linux/Mac
+export OPENROUTER_API_KEY=your-api-key-here
 ```
 
 ## Usage
 
 ### Basic Usage
 
-Search for a company's API and generate documentation:
-
 ```bash
-python main.py "CompanyName"
+python src/main.py "Stripe"
 ```
 
-### Advanced Options
-
-Specify output filename:
-```bash
-python main.py "GitHub" --output github_api.xlsx
-```
-
-Enable verbose logging:
-```bash
-python main.py "Stripe" --verbose
-```
-
-### Command Line Options
-
-- `company` (required): Name of the company or software to search for
-- `-o, --output`: Custom output Excel filename (optional)
-- `-v, --verbose`: Enable verbose logging for debugging
-
-### Examples
+### With Custom Output
 
 ```bash
-# Search for Stripe API
-python main.py "Stripe"
-
-# Search for GitHub API with custom output
-python main.py "GitHub" --output github_docs.xlsx
-
-# Search with verbose logging
-python main.py "Twilio" --verbose
+python src/main.py "GitHub" --output github_api.xlsx
 ```
+
+### With Verbose Logging
+
+```bash
+python src/main.py "Twilio" --verbose
+```
+
+### Test It
+
+```bash
+python test_ai.py
+```
+
+## Project Structure
+
+```
+API-discovery-agent/
+├── src/
+│   ├── ai_api_discovery.py    # AI logic (requests to OpenRouter)
+│   ├── excel_exporter.py      # Excel file generation
+│   └── main.py                # CLI entry point
+├── data/                       # Output folder (Excel files)
+├── test_ai.py                 # Test script
+├── simple_example.py          # Minimal usage example
+├── requirements.txt           # Dependencies
+├── README.md                  # This file
+└── NOTES.md                   # Developer notes
+```
+
+## Dependencies
+
+Only 2 packages required:
+
+- **requests** - HTTP requests for AI API
+- **openpyxl** - Excel file creation
 
 ## Output
 
-The application generates an Excel file containing:
+Excel files are saved to `data/` folder with:
 
-- **Company Name**: The searched company
-- **Documentation URL**: Link to the official API documentation
-- **Endpoint List**: Table with columns:
-  - Method (GET, POST, PUT, DELETE, etc.)
-  - Path (e.g., `/api/v1/users`)
-  - Full Endpoint (combined method and path)
-  - Description (extracted from documentation)
-  - Notes (empty column for user annotations)
+- Company information
+- API type (REST, GraphQL, SOAP, etc.)
+- Main documentation URL
+- List of documentation pages with titles and URLs
+- Timestamp
 
-## Requirements
+## Example
 
-- Python 3.12+
-- Internet connection (to access API documentation)
-- Dependencies listed in `requirements.txt`:
-  - requests
-  - beautifulsoup4
-  - openpyxl
-  - lxml
-  - urllib3
+```python
+from src.ai_api_discovery import AIAPIDiscovery
+from src.excel_exporter import ExcelExporter
 
-## How It Works
+# Search for API
+agent = AIAPIDiscovery()
+result = agent.search_company_api("Stripe")
 
-1. **Search Phase**: The agent tries common URL patterns:
-   - `https://api.{company}.com`
-   - `https://developer.{company}.com`
-   - `https://docs.{company}.com`
-   - `https://{company}.com/api`
-   - And more...
+# Export to Excel
+if result['has_api']:
+    exporter = ExcelExporter()
+    file = exporter.create_spreadsheet(result)
+    print(f"Saved to: {file}")
+```
 
-2. **Extraction Phase**: Uses multiple strategies to find endpoints:
-   - Parses code blocks for HTTP methods and paths
-   - Scans tables for structured endpoint data
-   - Analyzes headings and links for API paths
-   - Detects URL patterns in text
+## Why FREE?
 
-3. **Export Phase**: Creates a formatted Excel spreadsheet with all findings
-
-## Limitations
-
-- Requires publicly accessible API documentation
-- Extraction accuracy depends on documentation structure
-- Some APIs may require authentication to view documentation
-- Complex or non-standard documentation formats may not be fully parsed
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues or pull requests.
+- Uses **deepseek/deepseek-chat-v3.1:free** model via OpenRouter
+- No costs, no billing info needed
+- Excellent quality results
+- No usage limits for reasonable use
 
 ## License
 
-This project is open source and available for use and modification.
+Open source - free to use and modify.
+
+## Links
+
+- Get API Key: https://openrouter.ai/keys
+- Repository: https://github.com/GerritSt/API-discovery-agent

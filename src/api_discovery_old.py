@@ -5,9 +5,10 @@ This module provides functionality to discover and extract API documentation for
 
 import requests
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 import logging
-from typing import Dict, List, Optional, Tuple
-from urllib.parse import urljoin, urlparse
+from typing import Dict, List, Optional, Tuple, Union
+from urllib.parse import urlparse
 import re
 
 logger = logging.getLogger(__name__)
@@ -33,14 +34,6 @@ class APIDiscoveryAgent:
             URL of the API documentation if found, None otherwise
         """
         logger.info(f"Searching for API documentation for: {company_name}")
-        
-        # Common patterns for API documentation URLs
-        search_patterns = [
-            f"{company_name} api documentation",
-            f"{company_name} api reference",
-            f"{company_name} developer documentation",
-            f"{company_name} api docs"
-        ]
         
         # Try common URL patterns first
         common_domains = [
@@ -148,7 +141,7 @@ class APIDiscoveryAgent:
             logger.error(f"Error extracting endpoints from {url}: {str(e)}")
             return []
     
-    def _create_endpoint_dict(self, method: str, path: str, element) -> Dict[str, str]:
+    def _create_endpoint_dict(self, method: str, path: str, element: Optional[Union[Tag, None]]) -> Dict[str, str]:
         """Create a standardized endpoint dictionary."""
         # Extract description from surrounding context if available
         description = ""
