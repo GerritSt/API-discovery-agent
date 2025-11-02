@@ -87,7 +87,7 @@ class AIAPIDiscovery:
         """Fetch initial batch of endpoints."""
         prompt = '''Find the actual API endpoints for ''' + company_name + ''''s public API. I need:
 1. Does the company have a public API? (Yes/No)
-2. A list of the main API endpoints with their HTTP methods, paths, and descriptions
+2. A list of the main API endpoints with their HTTP methods, paths, descriptions, and parameters
 3. API type (REST, GraphQL, SOAP, etc.)
 4. Base URL for the API
 
@@ -98,14 +98,15 @@ Respond ONLY with valid JSON in this exact format:
     "api_type": "REST",
     "base_url": "https://api.example.com/v1",
     "endpoints": [
-        {"method": "GET", "path": "/users", "description": "Retrieve list of users"},
-        {"method": "POST", "path": "/users", "description": "Create a new user"},
-        {"method": "GET", "path": "/users/{id}", "description": "Get user by ID"},
-        {"method": "PUT", "path": "/users/{id}", "description": "Update user"},
-        {"method": "DELETE", "path": "/users/{id}", "description": "Delete user"}
+        {"method": "GET", "path": "/users", "description": "Retrieve list of users", "parameters": [{"name": "limit", "type": "integer"}, {"name": "offset", "type": "integer"}]},
+        {"method": "POST", "path": "/users", "description": "Create a new user", "parameters": [{"name": "email", "type": "string"}, {"name": "name", "type": "string"}]},
+        {"method": "GET", "path": "/users/{id}", "description": "Get user by ID", "parameters": [{"name": "id", "type": "string"}]},
+        {"method": "PUT", "path": "/users/{id}", "description": "Update user", "parameters": [{"name": "id", "type": "string"}, {"name": "name", "type": "string"}]},
+        {"method": "DELETE", "path": "/users/{id}", "description": "Delete user", "parameters": [{"name": "id", "type": "string"}]}
     ]
 }
 
+For each endpoint, include the key parameters with their name and data type (string, integer, boolean, array, object, etc.).
 Provide 15-20 of the most important/commonly used endpoints.
 If no public API exists, set has_api to false and use empty strings/arrays.'''
 
@@ -126,11 +127,12 @@ Find 15-20 MORE API endpoints that are NOT in the list above. Focus on different
 Respond ONLY with valid JSON in this exact format:
 {{
     "endpoints": [
-        {{"method": "GET", "path": "/invoices", "description": "List all invoices"}},
-        {{"method": "POST", "path": "/invoices", "description": "Create an invoice"}}
+        {{"method": "GET", "path": "/invoices", "description": "List all invoices", "parameters": [{{"name": "limit", "type": "integer"}}, {{"name": "status", "type": "string"}}]}},
+        {{"method": "POST", "path": "/invoices", "description": "Create an invoice", "parameters": [{{"name": "customer_id", "type": "string"}}, {{"name": "amount", "type": "integer"}}]}}
     ]
 }}
 
+For each endpoint, include the key parameters with their name and data type (string, integer, boolean, array, object, etc.).
 Only include NEW endpoints that are different from the list above. If there are no more endpoints, return an empty endpoints array.'''
 
         return self._make_api_request(prompt, company_name)
@@ -229,7 +231,10 @@ if __name__ == "__main__":
         if result['endpoints']:
             print(f"\nAPI Endpoints ({len(result['endpoints'])}):")
             for endpoint in result['endpoints']:
+                params = endpoint.get('parameters', [])
+                param_str = ", ".join([f"{p['name']} ({p['type']})" for p in params]) if params else "None"
                 print(f"  {endpoint['method']:<7} {endpoint['path']:<40} - {endpoint['description']}")
+                print(f"          Parameters: {param_str}")
     else:
         print("No public API found")
         if result.get('error'):

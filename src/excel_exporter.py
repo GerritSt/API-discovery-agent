@@ -87,7 +87,7 @@ class ExcelExporter:
         
         # API Endpoints section
         row += 2
-        sheet.merge_cells(f'A{row}:C{row}')
+        sheet.merge_cells(f'A{row}:D{row}')
         header_cell = sheet[f'A{row}']
         header_cell.value = "API Endpoints"
         header_cell.font = Font(color="FFFFFF", bold=True, size=12)
@@ -95,6 +95,7 @@ class ExcelExporter:
         header_cell.alignment = Alignment(horizontal='center', vertical='center')
         sheet[f'B{row}'].fill = header_fill
         sheet[f'C{row}'].fill = header_fill
+        sheet[f'D{row}'].fill = header_fill
         
         row += 1
         sheet[f'A{row}'] = "Method"
@@ -106,6 +107,9 @@ class ExcelExporter:
         sheet[f'C{row}'] = "Description"
         sheet[f'C{row}'].font = Font(bold=True)
         sheet[f'C{row}'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+        sheet[f'D{row}'] = "Parameters"
+        sheet[f'D{row}'].font = Font(bold=True)
+        sheet[f'D{row}'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
         
         # Add endpoints (sorted by path for better organization)
         endpoints = api_info.get('endpoints', [])
@@ -117,11 +121,20 @@ class ExcelExporter:
             sheet[f'A{row}'] = endpoint.get('method', '')
             sheet[f'B{row}'] = endpoint.get('path', '')
             sheet[f'C{row}'] = endpoint.get('description', '')
+            
+            # Format parameters as "name (type), name (type), ..."
+            parameters = endpoint.get('parameters', [])
+            if parameters:
+                param_str = ", ".join([f"{p.get('name', '')} ({p.get('type', '')})" for p in parameters])
+                sheet[f'D{row}'] = param_str
+            else:
+                sheet[f'D{row}'] = ""
         
         # Column widths
         sheet.column_dimensions['A'].width = 10
         sheet.column_dimensions['B'].width = 40
-        sheet.column_dimensions['C'].width = 60
+        sheet.column_dimensions['C'].width = 50
+        sheet.column_dimensions['D'].width = 40
         
         # Save workbook
         self.workbook.save(filename)

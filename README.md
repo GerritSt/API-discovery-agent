@@ -96,7 +96,7 @@ Only 2 packages required:
 
 ## Output
 
-Excel files are saved to `data/` folder with:
+Excel files are saved to `outputdata/` folder with:
 
 - Company information
 - API type (REST, GraphQL, SOAP, etc.)
@@ -104,22 +104,9 @@ Excel files are saved to `data/` folder with:
 - List of documentation pages with titles and URLs
 - Timestamp
 
-## Example
+## Example ouput
 
-```python
-from src.ai_api_discovery import AIAPIDiscovery
-from src.excel_exporter import ExcelExporter
-
-# Search for API
-agent = AIAPIDiscovery()
-result = agent.search_company_api("Stripe")
-
-# Export to Excel
-if result['has_api']:
-    exporter = ExcelExporter()
-    file = exporter.create_spreadsheet(result)
-    print(f"Saved to: {file}")
-```
+![Strava API endpoints example](assets/Strava_API_example.png)
 
 ## Why FREE?
 
