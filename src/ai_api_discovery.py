@@ -52,6 +52,14 @@ class AIAPIDiscovery:
         if not result.get('has_api'):
             return result
         
+        # Ensure base_url is present (some salvaged JSON might be missing it)
+        if not result.get('base_url'):
+            result['base_url'] = 'N/A'
+        if not result.get('api_type'):
+            result['api_type'] = 'REST'
+        if not result.get('company_name'):
+            result['company_name'] = company_name
+        
         # If we got endpoints, try to get more in additional passes
         all_endpoints = result.get('endpoints', [])
         max_iterations = 5  # Limit iterations to prevent infinite loops
@@ -163,13 +171,14 @@ Only include NEW endpoints that are different from the list above. If there are 
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are an expert at finding API documentation. Provide accurate, current endpoints. Respond only with valid JSON."
+                            "content": "You are an expert at finding API documentation. Provide accurate, current endpoints. Respond ONLY with valid JSON. Do not add any explanatory text, comments, or markdown formatting outside the JSON structure."
                         },
                         {
                             "role": "user",
                             "content": prompt
                         }
-                    ]
+                    ],
+                    "temperature": 0.1  # Lower temperature for more consistent JSON output
                 })
             )
             
@@ -185,11 +194,22 @@ Only include NEW endpoints that are different from the list above. If there are 
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
             
+            # Clean up common JSON issues
+            content = self._clean_json_response(content)
+            
             result = json.loads(content)
             return result
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse AI response as JSON: {e}")
+            logger.debug(f"Problematic content (first 500 chars): {content[:500]}")
+            
+            # Try to salvage partial JSON
+            salvaged = self._salvage_json(content)
+            if salvaged:
+                logger.info("Successfully recovered partial JSON data")
+                return salvaged
+            
             return self._empty_result(company_name, f"JSON parse error: {str(e)}")
         except requests.RequestException as e:
             logger.error(f"API request failed: {e}")
@@ -210,6 +230,56 @@ Only include NEW endpoints that are different from the list above. If there are 
             "endpoints": [],
             "error": error
         }
+    
+    def _clean_json_response(self, content: str) -> str:
+        """Clean up common JSON formatting issues from AI responses."""
+        # Remove any trailing commas before closing brackets/braces
+        import re
+        content = re.sub(r',\s*}', '}', content)
+        content = re.sub(r',\s*]', ']', content)
+        
+        # Remove any comments (// or /* */)
+        content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
+        content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
+        
+        return content.strip()
+    
+    def _salvage_json(self, content: str) -> Optional[Dict]:
+        """Try to salvage partial JSON from malformed response."""
+        try:
+            # Try to find the first complete JSON object
+            import re
+            
+            # Look for JSON object pattern
+            json_match = re.search(r'\{[\s\S]*\}', content)
+            if not json_match:
+                return None
+            
+            json_str = json_match.group(0)
+            
+            # Try progressively smaller chunks if parsing fails
+            lines = json_str.split('\n')
+            for i in range(len(lines), 0, -1):
+                try:
+                    partial = '\n'.join(lines[:i])
+                    # Try to close any open braces/brackets
+                    open_braces = partial.count('{') - partial.count('}')
+                    open_brackets = partial.count('[') - partial.count(']')
+                    
+                    # Add missing closing characters
+                    partial += ']' * open_brackets + '}' * open_braces
+                    
+                    # Clean and parse
+                    partial = self._clean_json_response(partial)
+                    result = json.loads(partial)
+                    return result
+                except:
+                    continue
+            
+            return None
+        except Exception as e:
+            logger.debug(f"Failed to salvage JSON: {e}")
+            return None
 
 if __name__ == "__main__":
     # Simple example usage
