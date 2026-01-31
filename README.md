@@ -8,10 +8,9 @@ This tool uses AI to intelligently search for company API documentation and expo
 
 ## Features
 
-- 🤖 **FREE AI-Powered** - Uses DeepSeek AI (no costs)
-- 📊 **Excel Export** - Clean, formatted spreadsheets
-- 🔍 **Smart Discovery** - Finds documentation URLs, API types, and descriptions
-- 🎯 **Simple** - Only 2 dependencies, clean code
+- Uses DeepSeek AI (no costs)
+- Clean, formatted excel spreadsheets
+- Finds documentation URLs, API types, and descriptions
 
 ## Installation
 
